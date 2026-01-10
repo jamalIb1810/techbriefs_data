@@ -15,7 +15,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
-import { TrendingUp, Users, Activity } from "lucide-react"
+import { TrendingUp, Users, Activity, ArrowUpIcon, ArrowDownIcon, MinusIcon } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 
 interface SocialMediaAnalyticsProps {
   timeRange?: string
@@ -43,6 +45,7 @@ export function SocialMediaAnalytics({ timeRange = "7d" }: SocialMediaAnalyticsP
     avgEngagement: 0,
     bestPerformer: { name: "Loading...", visits: 0 },
   })
+  const [platformDetails, setPlatformDetails] = useState<any[]>([])
 
   useEffect(() => {
     const fetchSocialData = async () => {
@@ -91,6 +94,84 @@ export function SocialMediaAnalytics({ timeRange = "7d" }: SocialMediaAnalyticsP
               totalVisits > 0 ? ((platformTotals.linkedin + platformTotals.facebook) / totalVisits) * 100 : 0,
             bestPerformer: bestPlatform,
           })
+
+          const platformInfo = [
+            {
+              name: "LinkedIn",
+              key: "linkedin",
+              color: "rgb(10, 102, 194)",
+              icon: "💼",
+            },
+            {
+              name: "Facebook",
+              key: "facebook",
+              color: "rgb(24, 119, 242)",
+              icon: "📘",
+            },
+            {
+              name: "X.com",
+              key: "x.com",
+              color: "rgb(0, 0, 0)",
+              icon: "𝕏",
+            },
+            {
+              name: "Instagram",
+              key: "instagram",
+              color: "rgb(193, 53, 132)",
+              icon: "📷",
+            },
+            {
+              name: "Pinterest",
+              key: "pinterest",
+              color: "rgb(230, 0, 35)",
+              icon: "📌",
+            },
+          ]
+
+          const details = platformInfo
+            .map((platform) => {
+              const visits = platformTotals[platform.key] || 0
+              const share = totalVisits > 0 ? (visits / totalVisits) * 100 : 0
+
+              const halfwayPoint = Math.floor(result.data.length / 2)
+              const firstHalf = result.data.slice(0, halfwayPoint)
+              const secondHalf = result.data.slice(halfwayPoint)
+
+              const firstHalfTotal = firstHalf.reduce(
+                (sum: number, day: any) => sum + (Number(day[platform.key]) || 0),
+                0,
+              )
+              const secondHalfTotal = secondHalf.reduce(
+                (sum: number, day: any) => sum + (Number(day[platform.key]) || 0),
+                0,
+              )
+
+              let trend = 0
+              let trendDirection: "up" | "down" | "neutral" = "neutral"
+
+              if (firstHalfTotal > 0) {
+                trend = ((secondHalfTotal - firstHalfTotal) / firstHalfTotal) * 100
+                if (trend > 5) trendDirection = "up"
+                else if (trend < -5) trendDirection = "down"
+              } else if (secondHalfTotal > 0) {
+                trendDirection = "up"
+                trend = 100
+              }
+
+              const avgDaily = result.data.length > 0 ? visits / result.data.length : 0
+
+              return {
+                ...platform,
+                visits,
+                share,
+                trend,
+                trendDirection,
+                avgDaily,
+              }
+            })
+            .sort((a, b) => b.visits - a.visits)
+
+          setPlatformDetails(details)
         } else {
           setSocialData([])
           setStats({
@@ -98,11 +179,13 @@ export function SocialMediaAnalytics({ timeRange = "7d" }: SocialMediaAnalyticsP
             avgEngagement: 0,
             bestPerformer: { name: "None", visits: 0 },
           })
+          setPlatformDetails([])
           setMessage(result.message || "No social media traffic detected in the selected time range")
         }
       } catch (error) {
         console.error("[v0] Error fetching social data:", error)
         setSocialData([])
+        setPlatformDetails([])
         setMessage("Error loading social media data")
       } finally {
         setIsLoading(false)
@@ -226,6 +309,83 @@ export function SocialMediaAnalytics({ timeRange = "7d" }: SocialMediaAnalyticsP
           )}
         </CardContent>
       </Card>
+
+      {/* Platform Performance Details */}
+      {!message && platformDetails.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Platform Performance Details</CardTitle>
+            <CardDescription>Comprehensive metrics for each social media platform</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Platform</TableHead>
+                  <TableHead className="text-right">Total Visits</TableHead>
+                  <TableHead className="text-right">Traffic Share</TableHead>
+                  <TableHead className="text-right">Avg Daily</TableHead>
+                  <TableHead className="text-right">Trend</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {platformDetails.map((platform) => (
+                  <TableRow key={platform.key}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: platform.color }} />
+                        <span className="flex items-center gap-2">
+                          <span className="text-lg">{platform.icon}</span>
+                          {platform.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">{platform.visits.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="secondary">{platform.share.toFixed(1)}%</Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">{platform.avgDaily.toFixed(1)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {platform.trendDirection === "up" && (
+                          <>
+                            <ArrowUpIcon className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-600">{platform.trend.toFixed(1)}%</span>
+                          </>
+                        )}
+                        {platform.trendDirection === "down" && (
+                          <>
+                            <ArrowDownIcon className="h-4 w-4 text-red-600" />
+                            <span className="text-sm font-medium text-red-600">
+                              {Math.abs(platform.trend).toFixed(1)}%
+                            </span>
+                          </>
+                        )}
+                        {platform.trendDirection === "neutral" && (
+                          <>
+                            <MinusIcon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Stable</span>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {platform.visits > 0 ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          No Traffic
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
