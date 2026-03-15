@@ -12,6 +12,7 @@ import { TopArticlesTable } from "@/components/admin/top-articles-table"
 import { CategoryBreakdown } from "@/components/admin/category-breakdown"
 import { SocialMediaAnalytics } from "@/components/admin/social-media-analytics"
 import { ConnectionStatus } from "@/components/admin/connection-status"
+import { ChatbotAnalytics } from "@/components/admin/chatbot-analytics"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -64,11 +65,12 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="mt-8">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="articles">Articles</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="social">Social Media</TabsTrigger>
+            <TabsTrigger value="chatbot">Ask TechBriefs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
@@ -105,6 +107,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="social" className="space-y-6 mt-6">
             <SocialMediaAnalytics timeRange={timeRange} />
+          </TabsContent>
+
+          <TabsContent value="chatbot" className="space-y-6 mt-6">
+            <ChatbotAnalytics timeRange={timeRange} />
           </TabsContent>
         </Tabs>
       </main>
