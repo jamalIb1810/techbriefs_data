@@ -85,6 +85,10 @@ export async function GET(request: Request) {
       },
     })
 
+    // Debug: log raw GA4 response
+    console.log("[v0] Chatbot date range:", startDate, "→", endDate)
+    console.log("[v0] Chatbot raw rows:", JSON.stringify(eventCountsResponse.data.rows || [], null, 2))
+
     // Process event counts
     const eventTotals: Record<string, { count: number; users: number }> = {}
     for (const row of eventCountsResponse.data.rows || []) {

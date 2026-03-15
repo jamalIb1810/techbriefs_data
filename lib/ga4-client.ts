@@ -36,82 +36,65 @@ export function getDateRange(timeRange: string): { startDate: string; endDate: s
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
 
-  let startDate = new Date()
-  let endDate = new Date()
+  // Always use today as endDate so live/same-day events are included
+  const endDate = new Date(today)
+  let startDate = new Date(today)
 
   switch (timeRange) {
     case "today":
       startDate = new Date(today)
-      endDate = new Date(today)
       break
 
     case "yesterday":
-      startDate = new Date(yesterday)
-      endDate = new Date(yesterday)
-      break
+      return {
+        startDate: formatDateForGA4(yesterday),
+        endDate: formatDateForGA4(yesterday),
+      }
 
     case "7d":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 6) // 7 days including end date
+      startDate.setDate(today.getDate() - 6)
       break
 
     case "14d":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 13)
+      startDate.setDate(today.getDate() - 13)
       break
 
     case "30d":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 29)
+      startDate.setDate(today.getDate() - 29)
       break
 
     case "60d":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 59)
+      startDate.setDate(today.getDate() - 59)
       break
 
     case "90d":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 89)
+      startDate.setDate(today.getDate() - 89)
       break
 
     case "6m":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setMonth(endDate.getMonth() - 6)
+      startDate.setMonth(today.getMonth() - 6)
       break
 
     case "1y":
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setFullYear(endDate.getFullYear() - 1)
+      startDate.setFullYear(today.getFullYear() - 1)
       break
 
     case "thisMonth":
-      endDate = new Date(yesterday)
       startDate = new Date(today.getFullYear(), today.getMonth(), 1)
       break
 
     case "lastMonth":
-      endDate = new Date(today.getFullYear(), today.getMonth(), 0) // Last day of previous month
-      startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1) // First day of previous month
-      break
+      return {
+        startDate: formatDateForGA4(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+        endDate: formatDateForGA4(new Date(today.getFullYear(), today.getMonth(), 0)),
+      }
 
     case "thisYear":
-      endDate = new Date(yesterday)
-      startDate = new Date(today.getFullYear(), 0, 1) // January 1st of current year
+      startDate = new Date(today.getFullYear(), 0, 1)
       break
 
     default:
-      // Default to last 7 days
-      endDate = new Date(yesterday)
-      startDate = new Date(endDate)
-      startDate.setDate(endDate.getDate() - 6)
+      startDate.setDate(today.getDate() - 6)
   }
 
   return {
