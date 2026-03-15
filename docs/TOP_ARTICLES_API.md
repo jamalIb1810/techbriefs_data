@@ -6,9 +6,9 @@ The Top Articles API endpoint retrieves the 3 most-viewed articles from Google A
 
 ## Endpoint
 
-```
+\`\`\`
 GET /api/analytics/top-articles
-```
+\`\`\`
 
 ## Authentication
 
@@ -48,15 +48,15 @@ Specifies the time period for analytics data.
 | `thisYear` | Current year to date | Jan 1 - Jan 14, 2026 |
 
 **Example:**
-```
+\`\`\`
 GET /api/analytics/top-articles?timeRange=30d
-```
+\`\`\`
 
 ## Response Format
 
 ### Success Response
 
-```json
+\`\`\`json
 {
   "success": true,
   "data": [
@@ -103,7 +103,7 @@ GET /api/analytics/top-articles?timeRange=30d
     "endDate": "2026-01-14"
   }
 }
-```
+\`\`\`
 
 ### Response Fields
 
@@ -130,7 +130,7 @@ GET /api/analytics/top-articles?timeRange=30d
 
 If GA4 is not configured or an error occurs, the API returns mock data with an error message:
 
-```json
+\`\`\`json
 {
   "success": false,
   "data": [...], // Mock data array
@@ -141,7 +141,7 @@ If GA4 is not configured or an error occurs, the API returns mock data with an e
     "endDate": "2026-01-14"
   }
 }
-```
+\`\`\`
 
 ## How It Works
 
@@ -149,9 +149,9 @@ If GA4 is not configured or an error occurs, the API returns mock data with an e
 
 Categories are automatically extracted from the URL path structure. The API expects blog URLs in the format:
 
-```
+\`\`\`
 /blog/{category}/{article-slug}
-```
+\`\`\`
 
 **Examples:**
 - `/blog/technology/nextjs-guide` → Category: "Technology"
@@ -166,28 +166,28 @@ The category name is automatically capitalized and formatted (hyphens converted 
 Direct from GA4 metric: `screenPageViews`
 
 #### Clicks (Estimated)
-```javascript
+\`\`\`javascript
 clicks = Math.floor(views * 0.15)
-```
+\`\`\`
 Assumes a 15% click-through rate.
 
 #### Engagement
-```javascript
+\`\`\`javascript
 engagement = averageSessionDuration / 60
-```
+\`\`\`
 Converts seconds to minutes, rounded to 1 decimal place.
 
 #### Bounce Rate
-```javascript
+\`\`\`javascript
 bounceRate = GA4_bounceRate * 100
-```
+\`\`\`
 Converts decimal to percentage (e.g., 0.352 → 35.2%).
 
 ### 3. Data Filtering
 
 The API automatically filters to include only blog articles by applying a dimension filter:
 
-```javascript
+\`\`\`javascript
 dimensionFilter: {
   filter: {
     fieldName: "pagePath",
@@ -197,7 +197,7 @@ dimensionFilter: {
     }
   }
 }
-```
+\`\`\`
 
 This ensures only URLs containing `/blog/` are included in results.
 
@@ -205,10 +205,10 @@ This ensures only URLs containing `/blog/` are included in results.
 
 Articles are sorted by `screenPageViews` in descending order, and the API limits results to exactly 3 articles using GA4's built-in sorting and limiting:
 
-```javascript
+\`\`\`javascript
 orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
 limit: 3
-```
+\`\`\`
 
 ### 5. Fallback Behavior
 
@@ -222,7 +222,7 @@ If GA4 credentials are missing or an error occurs:
 
 ### Fetch Top 3 Articles (Last 7 Days)
 
-```javascript
+\`\`\`javascript
 const response = await fetch('/api/analytics/top-articles')
 const data = await response.json()
 
@@ -231,22 +231,22 @@ if (data.success && data.source === 'ga4') {
 } else {
   console.log('Using mock data')
 }
-```
+\`\`\`
 
 ### Fetch Top 3 Articles (Last 30 Days)
 
-```javascript
+\`\`\`javascript
 const response = await fetch('/api/analytics/top-articles?timeRange=30d')
 const data = await response.json()
 
 data.data.forEach((article, index) => {
   console.log(`#${index + 1}: ${article.title} - ${article.views} views`)
 })
-```
+\`\`\`
 
 ### React Component Example
 
-```typescript
+\`\`\`typescript
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -279,13 +279,13 @@ export function TopArticlesWidget() {
     </div>
   )
 }
-```
+\`\`\`
 
 ## Debugging
 
 The API includes extensive console logging for debugging:
 
-```
+\`\`\`
 [v0] Top Articles API - Fetching for time range: 30d
 [v0] Top Articles API - Querying GA4 from 2025-12-15 to 2026-01-14
 [v0] Top Articles API - GA4 returned 3 rows
@@ -294,7 +294,7 @@ The API includes extensive console logging for debugging:
   { title: "Understanding React Server Components", views: 980 },
   { title: "AI-Powered Analytics Dashboard Guide", views: 875 }
 ]
-```
+\`\`\`
 
 Check your server console or browser Network tab to see these logs.
 

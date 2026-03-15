@@ -162,6 +162,7 @@ export function ChatbotAnalytics({ timeRange }: { timeRange: string }) {
   const { summary, events, dailyTrend, modeBreakdown } = data
 
   const totalEvents = events.reduce((s, e) => s + e.count, 0)
+  const isNoData = data.source === "mock" || totalEvents === 0
 
   const modeData = Object.entries(modeBreakdown).map(([name, value]) => ({
     name: name === "(not set)" ? "Unknown" : name.charAt(0).toUpperCase() + name.slice(1),
@@ -175,6 +176,19 @@ export function ChatbotAnalytics({ timeRange }: { timeRange: string }) {
 
   return (
     <div className="space-y-6">
+      {/* No data banner */}
+      {isNoData && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-500" />
+          <div>
+            <p className="font-medium">No chatbot events recorded yet</p>
+            <p className="text-amber-700 mt-0.5">
+              The GA4 events (<span className="font-mono text-xs">chat_opened</span>, <span className="font-mono text-xs">chat_message_sent</span>, etc.) have been created but have not received any data yet. This tab will automatically populate once users start interacting with the Ask TechBriefs chatbot.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card className="col-span-1">

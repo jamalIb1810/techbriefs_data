@@ -61,14 +61,14 @@ Your GA4 Property ID (just the numbers, e.g., `123456789`)
 The entire contents of your service account JSON file as a single-line string.
 
 To convert the JSON file to a single line:
-```bash
+\`\`\`bash
 cat path/to/service-account.json | jq -c
-```
+\`\`\`
 
 Or manually remove all line breaks and format it as:
-```json
+\`\`\`json
 {"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"...","client_email":"...","client_id":"...","auth_uri":"...","token_uri":"...","auth_provider_x509_cert_url":"...","client_x509_cert_url":"..."}
-```
+\`\`\`
 
 ### 5. Deploy and Test
 
