@@ -29,9 +29,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Fetch ALL event counts with NO filter — then filter client-side.
-    //    Using inListFilter on custom events can silently return 0 rows in GA4
-    //    if the events haven't been marked as "key events" or are still processing.
+    // Fetch ALL event counts with NO filter — then filter client-side
     const eventCountsResponse = await analyticsData.properties.runReport({
       property: `properties/${propertyId}`,
       requestBody: {
@@ -46,7 +44,7 @@ export async function GET(request: Request) {
       },
     })
 
-    // 2. Fetch daily trend with NO filter, filter client-side after
+    // Fetch daily trend with NO filter
     const trendResponse = await analyticsData.properties.runReport({
       property: `properties/${propertyId}`,
       requestBody: {
@@ -58,14 +56,12 @@ export async function GET(request: Request) {
       },
     })
 
-    // Log all event names GA4 returned so we can verify exact names
+    // Log all event names GA4 returned
     const allEventNames = (eventCountsResponse.data.rows || []).map(
       (r) => r.dimensionValues?.[0]?.value
     )
-    console.log("[v0] Chatbot date range:", startDate, "→", endDate)
-    console.log("[v0] ALL events returned by GA4:", allEventNames)
 
-    // Process event counts — match against our list (case-insensitive trim)
+    // Process event counts
     const eventTotals: Record<string, { count: number; users: number }> = {}
     for (const row of eventCountsResponse.data.rows || []) {
       const name = (row.dimensionValues?.[0]?.value || "").trim()
@@ -75,7 +71,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // Process daily trend — only keep chatbot-relevant events
+    // Process daily trend
     const TREND_EVENTS = new Set(["chat_opened", "chat_message_sent", "chat_error"])
     const trendMap: Record<string, Record<string, number>> = {}
     for (const row of trendResponse.data.rows || []) {
@@ -96,7 +92,7 @@ export async function GET(request: Request) {
         chat_error: evs["chat_error"] || 0,
       }))
 
-    // Mode breakdown — derive from mode_selected count (no custom dimension needed)
+    // Mode breakdown
     const modeBreakdown: Record<string, number> = {
       chat_mode_selected: eventTotals["chat_mode_selected"]?.count || 0,
     }
@@ -108,9 +104,8 @@ export async function GET(request: Request) {
       users: eventTotals[name]?.users || 0,
     }))
 
-    // Expose all GA4 event names in response so debug panel can show them
+    // Get totals for summary
     const allReturnedEvents = allEventNames.filter(Boolean) as string[]
-
     const totalOpened = eventTotals["chat_opened"]?.count || 0
     const totalSent = eventTotals["chat_message_sent"]?.count || 0
     const totalErrors = eventTotals["chat_error"]?.count || 0
