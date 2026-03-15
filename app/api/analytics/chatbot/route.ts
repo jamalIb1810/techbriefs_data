@@ -116,12 +116,6 @@ export async function GET(request: Request) {
     const totalCTAClicks = eventTotals["chat_cta_clicked"]?.count || 0
     const totalArticleClicks = eventTotals["chat_article_clicked"]?.count || 0
 
-    const totalOpened = eventTotals["chat_opened"]?.count || 0
-    const totalSent = eventTotals["chat_message_sent"]?.count || 0
-    const totalErrors = eventTotals["chat_error"]?.count || 0
-    const totalCTAClicks = eventTotals["chat_cta_clicked"]?.count || 0
-    const totalArticleClicks = eventTotals["chat_article_clicked"]?.count || 0
-
     return NextResponse.json({
       source: "ga4",
       dateRange: { startDate, endDate },
