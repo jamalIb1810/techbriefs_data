@@ -38,7 +38,7 @@ Welcome to the TechBriefs Admin Analytics API documentation.
 
 All APIs require these environment variables to be configured:
 
-```bash
+\`\`\`bash
 # Google Analytics 4
 GA4_PROPERTY_ID=your-property-id
 GA4_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
@@ -46,7 +46,7 @@ GA4_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 # Admin Authentication
 ADMIN_EMAIL=your-email@example.com
 ADMIN_PASSWORD=your-secure-password
-```
+\`\`\`
 
 ## Quick Start
 
@@ -64,14 +64,14 @@ Most analytics APIs support these query parameters:
 
 All APIs return JSON with this structure:
 
-```json
+\`\`\`json
 {
   "success": boolean,
   "data": any,
   "source": "ga4" | "mock",
   "error": string (optional)
 }
-```
+\`\`\`
 
 ## More Information
 

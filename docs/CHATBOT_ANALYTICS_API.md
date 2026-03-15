@@ -51,26 +51,26 @@ These events must be implemented in your chatbot widget and sent to Google Analy
 
 For `chat_mode_selected`, send a custom parameter `chat_mode` so the dashboard can break down mode usage:
 
-```js
+\`\`\`js
 gtag("event", "chat_mode_selected", {
   chat_mode: "ask", // or "search", "recommend", etc.
 })
-```
+\`\`\`
 
 For `chat_article_clicked`, optionally send `article_slug` and `article_title`:
 
-```js
+\`\`\`js
 gtag("event", "chat_article_clicked", {
   article_slug: "/blog/ai/best-tools-2025",
   article_title: "Best AI Tools in 2025",
 })
-```
+\`\`\`
 
 ---
 
 ## Response Structure
 
-```json
+\`\`\`json
 {
   "source": "ga4",
   "dateRange": {
@@ -107,7 +107,7 @@ gtag("event", "chat_article_clicked", {
     "search": 67
   }
 }
-```
+\`\`\`
 
 ### Field Descriptions
 
@@ -146,14 +146,14 @@ A map of `chat_mode` custom parameter values to event counts from `chat_mode_sel
 
 ## How the API Works Internally
 
-```
+\`\`\`
 Request → getDateRange(timeRange)
         → getGA4Client() [service account auth]
         → runReport #1: eventCount + totalUsers per eventName (filtered to 7 events)
         → runReport #2: daily trend for opened / sent / error
         → runReport #3: chat_mode_selected broken down by chat_mode dimension
         → Aggregate → Return JSON
-```
+\`\`\`
 
 Three separate GA4 `runReport` calls are made in parallel to keep response time low.
 
@@ -176,7 +176,7 @@ If `GA4_PROPERTY_ID` or `GA4_SERVICE_ACCOUNT_JSON` environment variables are mis
 
 ## Example Usage
 
-```bash
+\`\`\`bash
 # Last 7 days
 GET /api/analytics/chatbot?timeRange=7d
 
@@ -185,7 +185,7 @@ GET /api/analytics/chatbot?timeRange=30d
 
 # This month
 GET /api/analytics/chatbot?timeRange=thisMonth
-```
+\`\`\`
 
 ---
 

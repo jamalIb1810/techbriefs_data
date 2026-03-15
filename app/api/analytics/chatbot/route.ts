@@ -150,46 +150,29 @@ export async function GET(request: Request) {
       modeBreakdown,
     })
   } catch (error: any) {
-    console.error("[v0] GA4 chatbot API error:", error?.message)
-    return NextResponse.json(mockChatbotData(startDate, endDate))
+    const errMsg = error?.message || "Unknown error"
+    console.error("[v0] GA4 chatbot API error:", errMsg)
+    return NextResponse.json({
+      ...mockChatbotData(startDate, endDate),
+      error: errMsg,
+    })
   }
 }
 
 function mockChatbotData(startDate: string, endDate: string) {
-  const dailyTrend = []
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split("T")[0].replace(/-/g, "")
-    dailyTrend.push({
-      date: dateStr,
-      chat_opened: Math.floor(Math.random() * 30) + 10,
-      chat_message_sent: Math.floor(Math.random() * 80) + 20,
-      chat_error: Math.floor(Math.random() * 5),
-    })
-  }
-
   return {
     source: "mock",
     dateRange: { startDate, endDate },
     summary: {
-      totalSessions: 210,
-      totalMessages: 874,
-      avgMessagesPerSession: 4.2,
-      errorRate: 1.8,
-      ctaClickRate: 12.4,
-      articleClickRate: 23.7,
+      totalSessions: 0,
+      totalMessages: 0,
+      avgMessagesPerSession: 0,
+      errorRate: 0,
+      ctaClickRate: 0,
+      articleClickRate: 0,
     },
-    events: [
-      { name: "chat_opened", count: 210, users: 185 },
-      { name: "chat_message_sent", count: 874, users: 185 },
-      { name: "chat_closed", count: 198, users: 180 },
-      { name: "chat_mode_selected", count: 156, users: 140 },
-      { name: "chat_article_clicked", count: 98, users: 87 },
-      { name: "chat_cta_clicked", count: 52, users: 49 },
-      { name: "chat_error", count: 16, users: 14 },
-    ],
-    dailyTrend,
-    modeBreakdown: { ask: 89, search: 67 },
+    events: CHATBOT_EVENTS.map((name) => ({ name, count: 0, users: 0 })),
+    dailyTrend: [],
+    modeBreakdown: {},
   }
 }
