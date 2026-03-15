@@ -150,8 +150,12 @@ export async function GET(request: Request) {
       modeBreakdown,
     })
   } catch (error: any) {
-    console.error("[v0] GA4 chatbot API error:", error?.message)
-    return NextResponse.json(mockChatbotData(startDate, endDate))
+    const errMsg = error?.message || "Unknown error"
+    console.error("[v0] GA4 chatbot API error:", errMsg)
+    return NextResponse.json({
+      ...mockChatbotData(startDate, endDate),
+      error: errMsg,
+    })
   }
 }
 

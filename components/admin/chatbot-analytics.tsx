@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -28,7 +28,13 @@ import {
   BookOpen,
   Zap,
   ChevronRight,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface EventStat {
   name: string
@@ -44,7 +50,8 @@ interface DailyTrendPoint {
 }
 
 interface ChatbotData {
-  source: string
+  source: "ga4" | "mock"
+  error?: string
   dateRange: { startDate: string; endDate: string }
   summary: {
     totalSessions: number
@@ -126,22 +133,26 @@ export function ChatbotAnalytics({ timeRange }: { timeRange: string }) {
   const [data, setData] = useState<ChatbotData | null>(null)
   const [loading, setLoading] = useState(true)
   const [chartType, setChartType] = useState<"line" | "bar">("line")
+  const [showDebug, setShowDebug] = useState(false)
+  const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/analytics/chatbot?timeRange=${timeRange}`)
+      const json = await res.json()
+      setData(json)
+      setLastFetchedAt(new Date().toLocaleTimeString())
+    } catch (err) {
+      console.error("[v0] Chatbot analytics fetch error:", err)
+    } finally {
+      setLoading(false)
+    }
+  }, [timeRange])
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/analytics/chatbot?timeRange=${timeRange}`)
-        const json = await res.json()
-        setData(json)
-      } catch (err) {
-        console.error("[v0] Chatbot analytics fetch error:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchData()
-  }, [timeRange])
+  }, [fetchData])
 
   if (loading) {
     return (
@@ -176,6 +187,103 @@ export function ChatbotAnalytics({ timeRange }: { timeRange: string }) {
 
   return (
     <div className="space-y-6">
+      {/* GA4 Connection Debug Panel */}
+      <div className="rounded-lg border bg-card">
+        <button
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors"
+          onClick={() => setShowDebug((v) => !v)}
+        >
+          <div className="flex items-center gap-2">
+            {data?.source === "ga4" && !data?.error ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            ) : (
+              <XCircle className="h-4 w-4 text-red-500" />
+            )}
+            <span>
+              GA4 Connection:{" "}
+              <span className={data?.source === "ga4" && !data?.error ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                {data?.source === "ga4" && !data?.error ? "Connected — pulling real data" : "Not connected — showing zeros"}
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="text-xs">Last fetched: {lastFetchedAt ?? "—"}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={(e) => { e.stopPropagation(); fetchData() }}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+            {showDebug ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </button>
+
+        {showDebug && (
+          <div className="border-t px-4 py-4 space-y-4 text-sm">
+            {/* Error message if any */}
+            {data?.error && (
+              <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-red-800 text-xs font-mono">
+                <p className="font-semibold mb-1">GA4 Error:</p>
+                <p>{data.error}</p>
+              </div>
+            )}
+
+            {/* Date range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Date Range Queried</p>
+                <p className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                  {data?.dateRange.startDate} → {data?.dateRange.endDate}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Data Source</p>
+                <p className={`font-mono text-xs px-2 py-1 rounded font-semibold ${data?.source === "ga4" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
+                  {data?.source === "ga4" ? "ga4 (real data)" : "mock (fallback — no GA4 data)"}
+                </p>
+              </div>
+            </div>
+
+            {/* Raw event counts */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Raw Event Counts from GA4</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {data?.events.map((e) => (
+                  <div key={e.name} className="rounded-md border bg-muted/30 px-3 py-2">
+                    <p className="font-mono text-xs text-muted-foreground truncate">{e.name}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="font-semibold text-foreground">{e.count.toLocaleString()}</span>
+                      <span className="text-xs text-muted-foreground">{e.users} users</span>
+                    </div>
+                    {e.count === 0 && (
+                      <p className="text-xs text-amber-600 mt-1">No data yet</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* What to check */}
+            {(data?.source === "mock" || data?.error) && (
+              <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-blue-800 text-xs space-y-1">
+                <p className="font-semibold">What to check:</p>
+                <ul className="list-disc list-inside space-y-0.5 text-blue-700">
+                  <li>Confirm <span className="font-mono">GA4_PROPERTY_ID</span> is set in your environment variables</li>
+                  <li>Confirm <span className="font-mono">GA4_SERVICE_ACCOUNT_KEY</span> is valid JSON</li>
+                  <li>Ensure the Service Account has <strong>Viewer</strong> access to your GA4 property</li>
+                  <li>Check that the chatbot is firing these exact event names in GA4: <span className="font-mono">chat_opened</span>, <span className="font-mono">chat_message_sent</span>, etc.</li>
+                  <li>In GA4 &rarr; Events, confirm these custom events appear in the event list</li>
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* No data banner */}
       {isNoData && (
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
