@@ -52,6 +52,7 @@ interface DailyTrendPoint {
 interface ChatbotData {
   source: "ga4" | "mock"
   error?: string
+  allReturnedEvents?: string[]
   dateRange: { startDate: string; endDate: string }
   summary: {
     totalSessions: number
@@ -248,9 +249,38 @@ export function ChatbotAnalytics({ timeRange }: { timeRange: string }) {
               </div>
             </div>
 
+            {/* All events GA4 actually returned */}
+            {data?.allReturnedEvents && data.allReturnedEvents.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                  All Events GA4 Returned ({data.allReturnedEvents.length})
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {data.allReturnedEvents.map((name) => {
+                    const isChatbot = name.startsWith("chat_")
+                    return (
+                      <span
+                        key={name}
+                        className={`font-mono text-xs px-2 py-0.5 rounded-full border ${
+                          isChatbot
+                            ? "bg-green-50 text-green-700 border-green-200 font-semibold"
+                            : "bg-muted text-muted-foreground border-border"
+                        }`}
+                      >
+                        {name}
+                      </span>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Green = chatbot events matched. If your event names are missing here, they may not be firing yet or may have different names in GA4.
+                </p>
+              </div>
+            )}
+
             {/* Raw event counts */}
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Raw Event Counts from GA4</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Chatbot Event Counts</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {data?.events.map((e) => (
                   <div key={e.name} className="rounded-md border bg-muted/30 px-3 py-2">

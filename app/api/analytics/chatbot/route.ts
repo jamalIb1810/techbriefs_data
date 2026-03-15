@@ -28,7 +28,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Fetch total event counts per event name
+    // 1. Fetch ALL event counts with NO filter — then filter client-side.
+    //    Using inListFilter on custom events can silently return 0 rows in GA4
+    //    if the events haven't been marked as "key events" or are still processing.
     const eventCountsResponse = await analyticsData.properties.runReport({
       property: `properties/${propertyId}`,
       requestBody: {
@@ -38,72 +40,47 @@ export async function GET(request: Request) {
           { name: "eventCount" },
           { name: "totalUsers" },
         ],
-        dimensionFilter: {
-          filter: {
-            fieldName: "eventName",
-            inListFilter: {
-              values: CHATBOT_EVENTS,
-            },
-          },
-        },
         orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+        limit: 100,
       },
     })
 
-    // 2. Fetch daily trend for key events
+    // 2. Fetch daily trend with NO filter, filter client-side after
     const trendResponse = await analyticsData.properties.runReport({
       property: `properties/${propertyId}`,
       requestBody: {
         dateRanges: [{ startDate, endDate }],
         dimensions: [{ name: "date" }, { name: "eventName" }],
         metrics: [{ name: "eventCount" }],
-        dimensionFilter: {
-          filter: {
-            fieldName: "eventName",
-            inListFilter: {
-              values: ["chat_opened", "chat_message_sent", "chat_error"],
-            },
-          },
-        },
         orderBys: [{ dimension: { dimensionName: "date" } }],
+        limit: 1000,
       },
     })
 
-    // 3. Fetch mode selected breakdown (custom dimension: chat_mode)
-    const modeResponse = await analyticsData.properties.runReport({
-      property: `properties/${propertyId}`,
-      requestBody: {
-        dateRanges: [{ startDate, endDate }],
-        dimensions: [{ name: "eventName" }, { name: "customEvent:chat_mode" }],
-        metrics: [{ name: "eventCount" }],
-        dimensionFilter: {
-          filter: {
-            fieldName: "eventName",
-            stringFilter: { value: "chat_mode_selected", matchType: "EXACT" },
-          },
-        },
-      },
-    })
-
-    // Debug: log raw GA4 response
+    // Log all event names GA4 returned so we can verify exact names
+    const allEventNames = (eventCountsResponse.data.rows || []).map(
+      (r) => r.dimensionValues?.[0]?.value
+    )
     console.log("[v0] Chatbot date range:", startDate, "→", endDate)
-    console.log("[v0] Chatbot raw rows:", JSON.stringify(eventCountsResponse.data.rows || [], null, 2))
+    console.log("[v0] ALL events returned by GA4:", allEventNames)
 
-    // Process event counts
+    // Process event counts — match against our list (case-insensitive trim)
     const eventTotals: Record<string, { count: number; users: number }> = {}
     for (const row of eventCountsResponse.data.rows || []) {
-      const name = row.dimensionValues?.[0]?.value || ""
+      const name = (row.dimensionValues?.[0]?.value || "").trim()
       eventTotals[name] = {
         count: parseInt(row.metricValues?.[0]?.value || "0"),
         users: parseInt(row.metricValues?.[1]?.value || "0"),
       }
     }
 
-    // Process daily trend
+    // Process daily trend — only keep chatbot-relevant events
+    const TREND_EVENTS = new Set(["chat_opened", "chat_message_sent", "chat_error"])
     const trendMap: Record<string, Record<string, number>> = {}
     for (const row of trendResponse.data.rows || []) {
       const date = row.dimensionValues?.[0]?.value || ""
-      const event = row.dimensionValues?.[1]?.value || ""
+      const event = (row.dimensionValues?.[1]?.value || "").trim()
+      if (!TREND_EVENTS.has(event)) continue
       const count = parseInt(row.metricValues?.[0]?.value || "0")
       if (!trendMap[date]) trendMap[date] = {}
       trendMap[date][event] = count
@@ -111,18 +88,16 @@ export async function GET(request: Request) {
 
     const dailyTrend = Object.entries(trendMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, events]) => ({
+      .map(([date, evs]) => ({
         date,
-        chat_opened: events["chat_opened"] || 0,
-        chat_message_sent: events["chat_message_sent"] || 0,
-        chat_error: events["chat_error"] || 0,
+        chat_opened: evs["chat_opened"] || 0,
+        chat_message_sent: evs["chat_message_sent"] || 0,
+        chat_error: evs["chat_error"] || 0,
       }))
 
-    // Process mode breakdown
-    const modeBreakdown: Record<string, number> = {}
-    for (const row of modeResponse.data.rows || []) {
-      const mode = row.dimensionValues?.[1]?.value || "(not set)"
-      modeBreakdown[mode] = (modeBreakdown[mode] || 0) + parseInt(row.metricValues?.[0]?.value || "0")
+    // Mode breakdown — derive from mode_selected count (no custom dimension needed)
+    const modeBreakdown: Record<string, number> = {
+      chat_mode_selected: eventTotals["chat_mode_selected"]?.count || 0,
     }
 
     // Build per-event summary
@@ -131,6 +106,15 @@ export async function GET(request: Request) {
       count: eventTotals[name]?.count || 0,
       users: eventTotals[name]?.users || 0,
     }))
+
+    // Expose all GA4 event names in response so debug panel can show them
+    const allReturnedEvents = allEventNames.filter(Boolean) as string[]
+
+    const totalOpened = eventTotals["chat_opened"]?.count || 0
+    const totalSent = eventTotals["chat_message_sent"]?.count || 0
+    const totalErrors = eventTotals["chat_error"]?.count || 0
+    const totalCTAClicks = eventTotals["chat_cta_clicked"]?.count || 0
+    const totalArticleClicks = eventTotals["chat_article_clicked"]?.count || 0
 
     const totalOpened = eventTotals["chat_opened"]?.count || 0
     const totalSent = eventTotals["chat_message_sent"]?.count || 0
@@ -141,6 +125,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       source: "ga4",
       dateRange: { startDate, endDate },
+      allReturnedEvents,
       summary: {
         totalSessions: totalOpened,
         totalMessages: totalSent,
