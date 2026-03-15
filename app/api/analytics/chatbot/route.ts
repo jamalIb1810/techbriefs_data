@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getGA4Client, getDateRange } from "@/lib/ga4-client"
 
+// Chatbot event names tracked in GA4
 const CHATBOT_EVENTS = [
   "chat_opened",
   "chat_closed",
