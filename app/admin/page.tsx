@@ -14,6 +14,10 @@ import { SocialMediaAnalytics } from "@/components/admin/social-media-analytics"
 import { ConnectionStatus } from "@/components/admin/connection-status"
 import { ChatbotAnalytics } from "@/components/admin/chatbot-analytics"
 import { EngagementAnalytics } from "@/components/admin/engagement-analytics"
+import { DevicesAnalytics } from "@/components/admin/devices-analytics"
+import { DemographicsAnalytics } from "@/components/admin/demographics-analytics"
+import { TrafficAnalytics } from "@/components/admin/traffic-analytics"
+import { BehaviorAnalytics } from "@/components/admin/behavior-analytics"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -26,9 +30,8 @@ export default function AdminDashboard() {
         const response = await fetch("/api/analytics/overview?timeRange=7d")
         const result = await response.json()
         setIsGA4Configured(result.source === "ga4")
-        console.log("[v0] GA4 configuration status:", result.source)
       } catch (error) {
-        console.error("[v0] Error checking GA4 config:", error)
+        console.error("Error checking GA4 config:", error)
         setIsGA4Configured(false)
       }
     }
@@ -66,14 +69,20 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="mt-8">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="articles">Articles</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="social">Social Media</TabsTrigger>
-            <TabsTrigger value="chatbot">Ask TechBriefs</TabsTrigger>
-            <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2">
+            <TabsList className="inline-flex w-auto min-w-full md:min-w-0">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="articles">Articles</TabsTrigger>
+              <TabsTrigger value="categories">Categories</TabsTrigger>
+              <TabsTrigger value="traffic">Traffic</TabsTrigger>
+              <TabsTrigger value="behavior">Behavior</TabsTrigger>
+              <TabsTrigger value="devices">Devices</TabsTrigger>
+              <TabsTrigger value="demographics">Geography</TabsTrigger>
+              <TabsTrigger value="social">Social</TabsTrigger>
+              <TabsTrigger value="chatbot">Chatbot</TabsTrigger>
+              <TabsTrigger value="engagement">Engagement</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
             {/* Analytics Chart */}
@@ -105,6 +114,22 @@ export default function AdminDashboard() {
 
           <TabsContent value="categories" className="space-y-6 mt-6">
             <CategoryBreakdown timeRange={timeRange} />
+          </TabsContent>
+
+          <TabsContent value="traffic" className="space-y-6 mt-6">
+            <TrafficAnalytics timeRange={timeRange} />
+          </TabsContent>
+
+          <TabsContent value="behavior" className="space-y-6 mt-6">
+            <BehaviorAnalytics timeRange={timeRange} />
+          </TabsContent>
+
+          <TabsContent value="devices" className="space-y-6 mt-6">
+            <DevicesAnalytics timeRange={timeRange} />
+          </TabsContent>
+
+          <TabsContent value="demographics" className="space-y-6 mt-6">
+            <DemographicsAnalytics timeRange={timeRange} />
           </TabsContent>
 
           <TabsContent value="social" className="space-y-6 mt-6">
