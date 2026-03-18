@@ -26,6 +26,11 @@ export function getGA4Client() {
   }
 }
 
+// Alias for getGA4Client for consistency across routes
+export function getAnalytics() {
+  return getGA4Client()
+}
+
 // Helper to format date for GA4 API
 export function formatDateForGA4(date: Date): string {
   return date.toISOString().split("T")[0]
